@@ -29,8 +29,12 @@ app.use("/api/story",storyRouter)
 app.use("/api/message",messageRouter)
 
 
-server.listen(port , ()=>{
-    connectDb()
-    console.log("server started")
-})
+const startServer = async () => {
+  await connectDb();
 
+  app.listen(port, () => {
+    console.log(`🚀 Server started on port: ${port}`);
+  });
+};
+
+startServer();
