@@ -14,7 +14,7 @@ dotenv.config()
 
 const port=process.env.PORT || 5000
 app.use(cors({
-    origin:"https://crewzy-npib.onrender.com",
+    origin:["https://crewzy-npib.onrender.com","https://crewzy.me"],
     credentials:true,
     
 }))
