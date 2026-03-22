@@ -2,6 +2,71 @@ import sendMail from "../config/Mail.js"
 import genToken from "../config/token.js"
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
+import { OAuth2Client } from "google-auth-library"
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
+export const googleAuth = async (req, res) => {
+    try {
+        const { credential } = req.body
+        if (!credential) {
+            return res.status(400).json({ message: "Google credential is required" })
+        }
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        })
+
+        const payload = ticket.getPayload()
+        const { sub: googleId, email, name, picture } = payload
+
+        // Try to find existing user by googleId or email
+        let user = await User.findOne({ $or: [{ googleId }, { email }] })
+
+        if (user) {
+            // Link googleId if user exists by email but not yet linked
+            if (!user.googleId) {
+                user.googleId = googleId
+                if (picture && !user.profileImage) {
+                    user.profileImage = picture
+                }
+                await user.save()
+            }
+        } else {
+            // Create new user — auto-generate a unique userName
+            const baseUserName = name.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
+            let userName = baseUserName
+            let counter = 1
+            while (await User.findOne({ userName })) {
+                userName = `${baseUserName}${counter}`
+                counter++
+            }
+
+            user = await User.create({
+                name,
+                userName,
+                email,
+                googleId,
+                profileImage: picture || undefined
+            })
+        }
+
+        const token = await genToken(user._id)
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+            secure: true,
+            sameSite: "None"
+        })
+
+        return res.status(200).json(user)
+
+    } catch (error) {
+        return res.status(500).json({ message: `google auth error ${error}` })
+    }
+}
 export const signUp = async (req, res) => {
     try {
         const { name, email, password, userName } = req.body
@@ -77,7 +142,12 @@ export const signIn = async (req, res) => {
 
 export const signOut = async (req, res) => {
     try {
-        res.clearCookie("token")
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            path: "/"
+        })
         return res.status(200).json({ message: "sign out successfully" })
     } catch (error) {
         return res.status(500).json({ message: `signout error ${error}` })

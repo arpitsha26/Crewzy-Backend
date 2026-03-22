@@ -17,7 +17,9 @@ const userSchema=new mongoose.Schema({
     },
      password:{
         type:String,
-        required:true
+    },
+    googleId:{
+        type:String,
     },
     profileImage:{
         type:String
