@@ -33,11 +33,14 @@ function reloadWebsite() {
 setInterval(reloadWebsite, interval);
 
 const port = process.env.PORT || 5000
-app.use(cors({
-  origin: ["https://crewzy-npib.onrender.com", "https://crewzy.me", "https://crewzy-me.vercel.app"],
-  credentials: true,
+const corsOrigins = process.env.CORS_ORIGINS.split(",");
 
-}))
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json())
 app.use(cookieParser())
 
