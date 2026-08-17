@@ -21,11 +21,11 @@ export const googleAuth = async (req, res) => {
         const payload = ticket.getPayload()
         const { sub: googleId, email, name, picture } = payload
 
-        // Try to find existing user by googleId or email
+
         let user = await User.findOne({ $or: [{ googleId }, { email }] })
 
         if (user) {
-            // Link googleId if user exists by email but not yet linked
+
             if (!user.googleId) {
                 user.googleId = googleId
                 if (picture && !user.profileImage) {
@@ -34,7 +34,7 @@ export const googleAuth = async (req, res) => {
                 await user.save()
             }
         } else {
-            // Create new user — auto-generate a unique userName
+
             const baseUserName = name.toLowerCase().replace(/[^a-z0-9]/g, "") || "user"
             let userName = baseUserName
             let counter = 1
@@ -98,7 +98,7 @@ export const signUp = async (req, res) => {
             httpOnly: true,
             maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
             secure: true,
-            sameSite:"None"
+            sameSite: "None"
         })
 
         return res.status(201).json(user)
@@ -129,7 +129,7 @@ export const signIn = async (req, res) => {
             httpOnly: true,
             maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
             secure: true,
-            sameSite:"None"
+            sameSite: "None"
         })
 
         return res.status(200).json(user)
